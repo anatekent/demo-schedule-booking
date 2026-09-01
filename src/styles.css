@@ -2,7 +2,7 @@
 * { box-sizing:border-box; }
 body { margin:0; min-width:320px; min-height:100vh; background:#f5f7fa; }
 button,input,select { font:inherit; }
-.app-shell { min-height:100vh; }
+.app-shell { min-height:calc(100vh - 10px);padding: 10px; }
 .topbar { min-height:76px; padding:14px 24px; background:#fff; border-bottom:1px solid #dfe5ec; display:flex; align-items:center; justify-content:space-between; box-shadow:0 1px 3px rgb(24 42 70 / 5%); }
 .brand-block,.header-actions,.date-controls,.toolbar-right,.filter-box { display:flex; align-items:center; }
 .brand-block { gap:12px; }.brand-mark { width:44px; height:44px; border-radius:12px; display:grid; place-items:center; color:#fff; background:linear-gradient(145deg,#0878d1,#034c9d); box-shadow:0 8px 18px rgb(4 95 184 / 20%); }.brand-mark svg { width:23px; }
