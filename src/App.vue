@@ -25,6 +25,20 @@ const blankEquipment = () => ({
   id: "", name: "", nameZh: "", maker: "", model: "", partNo: "", serialNo: "", accessories: "", sortOrder: null,
 });
 
+// 密碼驗證相關狀態
+const isAuthenticated = ref(false);
+const inputPassword = ref("");
+
+const checkPassword = () => {
+  if (inputPassword.value === 'Good86920553') {
+    isAuthenticated.value = true;
+    sessionStorage.setItem('site_auth', 'true');
+  } else {
+    alert('密碼錯誤，請重新輸入。');
+    inputPassword.value = '';
+  }
+};
+
 const equipment = ref([]);
 const bookings = ref([]);
 const loading = ref(true);
@@ -49,6 +63,11 @@ const loadError = ref("");
 const dataMode = repository.mode;
 
 onMounted(async () => {
+  // 網頁載入時檢查是否已經驗證過
+  if (sessionStorage.getItem('site_auth') === 'true') {
+    isAuthenticated.value = true;
+  }
+
   try {
     [equipment.value, bookings.value] = await Promise.all([repository.getEquipment(), repository.getBookings()]);
   } catch (caught) {
@@ -320,14 +339,14 @@ function barStyle(booking, lane) {
 </script>
 
 <template>
-  <main class="app-shell">
+  <!-- 通過驗證後才顯示的主畫面 -->
+  <main v-if="isAuthenticated" class="app-shell">
     <header class="topbar">
       <div class="brand-block">
         <div class="brand-mark"><CalendarDays aria-hidden="true" /></div>
         <div><h1>Demo Schedule 預約排程</h1></div>
       </div>
       <div class="header-actions">
-        
         <button class="button button-primary new-booking" type="button" @click="openNew"><Plus aria-hidden="true" />新增預約</button>
       </div>
     </header>
@@ -443,4 +462,57 @@ function barStyle(booking, lane) {
       </Transition>
     </Teleport>
   </main>
+
+  <!-- 未通過驗證時顯示的密碼輸入畫面 -->
+  <div v-else class="login-screen">
+    <div class="login-box">
+      <h2>請輸入通行碼</h2>
+      <input 
+        type="password" 
+        v-model="inputPassword" 
+        @keyup.enter="checkPassword"
+        placeholder="請輸入密碼" 
+        class="control login-input"
+      />
+      <button class="button button-primary login-btn" @click="checkPassword">進入系統</button>
+    </div>
+  </div>
 </template>
+
+.login-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: #f3f4f6;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.login-box {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  min-width: 300px;
+}
+
+.login-box h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.login-input {
+  width: 100%;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem;
+  box-sizing: border-box;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+}
+</style>
