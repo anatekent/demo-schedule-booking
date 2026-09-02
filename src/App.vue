@@ -25,6 +25,8 @@ const blankEquipment = () => ({
   id: "", name: "", nameZh: "", maker: "", model: "", partNo: "", serialNo: "", accessories: "", sortOrder: null,
 });
 
+const isAuthenticated = ref(false);
+const inputPassword = ref("");
 const equipment = ref([]);
 const bookings = ref([]);
 const loading = ref(true);
@@ -48,12 +50,41 @@ const savedMessage = ref("");
 const loadError = ref("");
 const dataMode = repository.mode;
 
-onMounted(async () => {
+const fetchData = async () => {
+  loading.value = true;
+  loadError.value = "";
   try {
     [equipment.value, bookings.value] = await Promise.all([repository.getEquipment(), repository.getBookings()]);
   } catch (caught) {
     loadError.value = caught instanceof Error ? caught.message : "無法讀取排程資料。";
   } finally {
+    loading.value = false;
+  }
+};
+
+const checkPassword = () => {
+  if (inputPassword.value === '123456') {
+    isAuthenticated.value = true;
+    try {
+      sessionStorage.setItem('site_auth', 'true');
+    } catch (e) {}
+    fetchData();
+  } else {
+    alert('密碼錯誤，請重新輸入。');
+    inputPassword.value = '';
+  }
+};
+
+onMounted(() => {
+  let isAuthed = false;
+  try {
+    isAuthed = sessionStorage.getItem('site_auth') === 'true';
+  } catch (e) {}
+
+  if (isAuthed) {
+    isAuthenticated.value = true;
+    fetchData();
+  } else {
     loading.value = false;
   }
 });
@@ -320,14 +351,13 @@ function barStyle(booking, lane) {
 </script>
 
 <template>
-  <main class="app-shell">
+  <main v-if="isAuthenticated" class="app-shell">
     <header class="topbar">
       <div class="brand-block">
         <div class="brand-mark"><CalendarDays aria-hidden="true" /></div>
         <div><h1>Demo Schedule 預約排程</h1></div>
       </div>
       <div class="header-actions">
-        
         <button class="button button-primary new-booking" type="button" @click="openNew"><Plus aria-hidden="true" />新增預約</button>
       </div>
     </header>
@@ -360,7 +390,7 @@ function barStyle(booking, lane) {
       </div>
 
       <div v-if="loading" class="loading-state">載入排程資料中…</div>
-      <div v-else-if="loadError" class="error-state"><strong>無法連線 SharePoint Lists</strong><span>{{ loadError }}</span><small>請檢查 `.env.local` 的 Site URL、清單名稱與登入權限。</small></div>
+      <div v-else-if="loadError" class="error-state"><strong>無法讀取排程資料</strong><span>{{ loadError }}</span></div>
       <div v-else class="schedule-scroll">
         <div class="schedule-table" :style="{ width: `${500 + DAY_WIDTH * daysShown}px` }">
           <div class="schedule-header">
@@ -443,4 +473,18 @@ function barStyle(booking, lane) {
       </Transition>
     </Teleport>
   </main>
+
+  <div v-else class="login-screen">
+    <div class="login-box">
+      <h2>請輸入通行碼</h2>
+      <input 
+        type="password" 
+        v-model="inputPassword" 
+        @keyup.enter="checkPassword"
+        placeholder="請輸入密碼" 
+        class="control login-input"
+      />
+      <button class="button button-primary login-btn" @click="checkPassword">進入系統</button>
+    </div>
+  </div>
 </template>
